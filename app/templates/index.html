@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}메인 페이지{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">🎸 중고 악기 목록</h2>
+
+<form method="GET" action="/" class="row g-3 mb-4 justify-content-center">
+    <div class="row mb-4 justify-content-center">
+        <div class="col-12 col-md-8">
+            <div class="input-group input-group-lg">
+                <input type="text" name="q" class="form-control" placeholder="모델명 또는 제목" value="{{ search_query or '' }}" style="font-size:1.3rem; height:3.2rem;">
+                <button class="btn btn-primary" type="submit" style="font-size:1.2rem; min-width:90px;">검색</button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <label for="brand" class="form-label">브랜드 선택</label>
+        <select name="brand" id="brand" class="form-select">
+            <option value="">전체</option>
+            {% for brand in all_brands %}
+                <option value="{{ brand.id }}" {% if selected_brand_id == brand.id %}selected{% endif %}>
+                    {{ brand.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="sort" class="form-label">정렬 기준</label>
+        <select name="sort" id="sort" class="form-select">
+            <option value="">기본</option>
+            <option value="views_desc" {% if sort == 'views_desc' %}selected{% endif %}>조회수 높은순</option>
+            <option value="views_asc" {% if sort == 'views_asc' %}selected{% endif %}>조회수 낮은순</option>
+            <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>가격 높은순</option>
+            <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>가격 낮은순</option>
+            <option value="condition_best" {% if sort == 'condition_best' %}selected{% endif %}>상태 좋음순</option>
+            <option value="condition_worst" {% if sort == 'condition_worst' %}selected{% endif %}>상태 나쁨순</option>
+            <option value="shape_asc" {% if sort == 'shape_asc' %}selected{% endif %}>쉐입 가나다순</option>
+            <option value="shape_desc" {% if sort == 'shape_desc' %}selected{% endif %}>쉐입 역순</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="shape" class="form-label">쉐입(Shape) 필터</label>
+        <select name="shape" id="shape" class="form-select">
+            <option value="">전체</option>
+            <option value="Stratocaster" {% if request.args.get('shape') == 'Stratocaster' %}selected{% endif %}>Stratocaster</option>
+            <option value="Les Paul" {% if request.args.get('shape') == 'Les Paul' %}selected{% endif %}>Les Paul</option>
+            <option value="SG" {% if request.args.get('shape') == 'SG' %}selected{% endif %}>SG</option>
+            <option value="Telecaster" {% if request.args.get('shape') == 'Telecaster' %}selected{% endif %}>Telecaster</option>
+            <option value="Offset" {% if request.args.get('shape') == 'Offset' %}selected{% endif %}>Offset</option>
+            <option value="SuperStrat" {% if request.args.get('shape') == 'SuperStrat' %}selected{% endif %}>SuperStrat</option>
+            <option value="Semi-Hollow" {% if request.args.get('shape') == 'Semi-Hollow' %}selected{% endif %}>Semi-Hollow</option>
+            <option value="Hollow" {% if request.args.get('shape') == 'Hollow' %}selected{% endif %}>Hollow</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="condition" class="form-label">손상도(상태) 필터</label>
+        <select name="condition" id="condition" class="form-select">
+            <option value="">전체</option>
+            <option value="80up" {% if request.args.get('condition') == '80up' %}selected{% endif %}>80~100 (최상)</option>
+            <option value="60up" {% if request.args.get('condition') == '60up' %}selected{% endif %}>60~79 (양호)</option>
+            <option value="40up" {% if request.args.get('condition') == '40up' %}selected{% endif %}>40~59 (사용감 있음)</option>
+            <option value="under40" {% if request.args.get('condition') == 'under40' %}selected{% endif %}>0~39 (수리 필요)</option>
+        </select>
+    </div>
+</form>
+
+<div class="row">
+    {% for post in posts %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+            {% if post.images and post.images|length > 0 %}
+  <img src="{{ url_for('static', filename='uploads/' + post.images[0]) }}"
+       class="img-fluid"
+       style="max-height: 200px; object-fit: cover; width: 100%;"
+       alt="썸네일 이미지">
+{% endif %}
+            <div class="card-body">
+                <h5 class="card-title">
+                    <a href="{{ url_for('main.view_post', post_id=post.id) }}">{{ post.title }}</a>
+                </h5>
+                <p class="card-text">
+                    <strong>브랜드:</strong>
+                    {% if post.brand %}
+                    <span style="color:blue; cursor:pointer;"
+                          onmouseover="showTooltip(event, 'brand', {{ post.brand_id }})"
+                          onmouseout="hideTooltip()">
+                        {{ post.brand.name }}
+                    </span>
+                    {% else %}
+                        <span class="text-muted">(정보 없음)</span>
+                    {% endif %}<br>
+                    <strong>모델명:</strong> {{ post.model_name }}<br>
+                    <strong>가격:</strong>
+                    {% if post.price is not none %}
+                        {{ "%.0f"|format(post.price) }}만원
+                    {% else %}
+                        가격 미정
+                    {% endif %}<br>
+                    <strong>작성자:</strong> {{ post.user.username }}<br>
+                    <strong>조회수:</strong> {{ post.views }}
+                </p>
+            </div>
+            {% if current_user.is_authenticated and post.user_id == current_user.id %}
+            <div class="card-footer text-end">
+                <form action="{{ url_for('main.delete_post', post_id=post.id) }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-danger"
+                            onclick="return confirm('정말 삭제하시겠습니까?')">삭제</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Tooltip element -->
+<div id="infoTooltip" class="brand-tooltip"></div>
+
+<script>
+    let tooltip;
+    function showTooltip(event, category, id) {
+        fetch(`/api/info/${category}/${id}`)
+            .then(res => res.json())
+            .then(data => {
+                tooltip = document.getElementById('infoTooltip');
+                tooltip.innerHTML = `<strong>${data.title}</strong><br>${data.description}`;
+                tooltip.style.display = 'block';
+                tooltip.style.left = event.pageX + 10 + 'px';
+                tooltip.style.top = event.pageY + 10 + 'px';
+            });
+    }
+    function hideTooltip() {
+        if (tooltip) tooltip.style.display = 'none';
+    }
+</script>
+{% endblock %}

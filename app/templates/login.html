@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}로그인{% endblock %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="card shadow p-4" style="width: 100%; max-width: 400px;">
+        <h3 class="card-title text-center mb-4">🔐 로그인</h3>
+        <form method="POST">
+            <div class="mb-3">
+                <label for="username" class="form-label">아이디</label>
+                <input type="text" class="form-control" id="username" name="username" placeholder="아이디" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">비밀번호</label>
+                <input type="password" class="form-control" id="password" name="password" placeholder="비밀번호" required>
+            </div>
+            <div class="d-grid mb-3">
+                <button type="submit" class="btn btn-primary">로그인</button>
+            </div>
+        </form>
+        <p class="text-center">
+            회원이 아니신가요? <a href="{{ url_for('auth.register') }}">회원가입</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+<script>
+    // 로그인 폼 제출 시 유효성 검사
+    document.querySelector('form').addEventListener('submit', function(event) {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+
+        if (!username || !password) {
+            event.preventDefault();
+            alert('아이디와 비밀번호를 모두 입력해주세요.');
+        }
+    });

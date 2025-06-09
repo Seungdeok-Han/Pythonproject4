@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}판매글 작성{% endblock %}
+
+{% block content %}
+<style>
+.shape-tooltip-img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 120px;
+    max-height: 120px;
+}
+.shape-tooltip-label {
+    display: block;
+    text-align: center;
+    font-weight: bold;
+    margin-top: 0.5em;
+}
+</style>
+<div class="container my-5">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">🎸 판매글 작성</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="/add" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="title" class="form-label">제목</label>
+                    <input type="text" class="form-control" id="title" name="title" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="brand_id" class="form-label">제조사</label>
+                    <select class="form-select" id="brand_id" name="brand_id" required onchange="toggleCustomBrand(this)">
+                        <option value="" disabled selected>제조사(브랜드) 선택</option>
+                        {% for brand in brands %}
+                            <option value="{{ brand.id }}" title="{{ brand.description|default('') }}">{{ brand.name }}</option>
+                        {% endfor %}
+                        <option value="custom">기타(직접입력)</option>
+                    </select>
+                    <input type="text" class="form-control mt-2" id="custom_brand" name="custom_brand" placeholder="제조사 직접 입력" style="display:none;">
+                </div>
+                <script>
+                function toggleCustomBrand(select) {
+                  const customInput = document.getElementById('custom_brand');
+                  if (select.value === 'custom') {
+                    customInput.style.display = 'block';
+                    customInput.required = true;
+                  } else {
+                    customInput.style.display = 'none';
+                    customInput.required = false;
+                  }
+                }
+                </script>
+
+                <div class="mb-3">
+                    <label for="model_name" class="form-label">모델명</label>
+                    <input type="text" class="form-control" id="model_name" name="model_name" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="price" class="form-label">가격 (₩)</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="price" name="price" step="0.01" required>
+                        <span class="input-group-text">만원</span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="condition" class="form-label">악기 상태 (0=최악, 100=최상)</label>
+                    <div class="d-flex align-items-center">
+                        <input type="range" class="form-range" id="condition" name="condition" min="0" max="100" step="5" value="80" oninput="document.getElementById('condition-value').innerText=this.value">
+                        <span class="ms-3 fw-bold" id="condition-value">80</span>/100
+                    </div>
+                    <div class="mt-2">
+                        <table class="table table-sm table-bordered align-middle text-center" style="background:#f8f9fa;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:20%">점수</th>
+                                    <th>상태 예시</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>90~100</td><td>거의 새것, 흠집/마모 없음, 완벽 작동</td></tr>
+                                <tr><td>70~89</td><td>약간의 사용감, 미세한 생활기스, 기능 이상 없음</td></tr>
+                                <tr><td>50~69</td><td>눈에 띄는 사용감, 약간의 흠집/마모, 연주에 영향 없음</td></tr>
+                                <tr><td>30~49</td><td>많은 사용감, 도장 벗겨짐/마모, 일부 부품 교체 필요 </td></tr>
+                                <tr><td>0~29</td><td>심한 손상, 수리 필요, 연주 불가/제한</td></tr>
+                            </tbody>
+                        </table>
+                        <small class="text-muted">위 기준을 참고해 슬라이더를 조정해 주세요.</small>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="shape" class="form-label">악기 모양 (Shape)</label>
+                    <select class="form-select" id="shape" name="shape" onchange="toggleCustomShape(this)">
+                        <option value="Stratocaster" title="Fender의 대표적인 일렉기타 쉐입. 인체공학적 바디와 밝은 사운드.">Stratocaster</option>
+                        <option value="Les Paul" title="Gibson의 대표 쉐입. 두꺼운 바디와 깊고 두터운 사운드.">Les Paul</option>
+                        <option value="SG" title="Gibson의 얇고 가벼운 바디, 강렬한 록 사운드.">SG</option>
+                        <option value="Telecaster" title="Fender의 빈티지한 싱글컷 바디, 밝고 명료한 사운드.">Telecaster</option>
+                        <option value="Offset" title="재즈마스터, 재규어 등 비대칭 바디. 인디/얼터너티브에 인기.">Offset</option>
+                        <option value="SuperStrat" title="메탈/락 특화, 스트랫 기반에 하이게인 픽업과 현대적 기능.">SuperStrat</option>
+                        <option value="Semi-Hollow" title="바디 내부가 비어있어 따뜻하고 풍부한 울림. 재즈/블루스에 적합.">Semi-Hollow</option>
+                        <option value="Hollow" title="완전히 빈 바디, 어쿠스틱에 가까운 울림. 재즈/클래식에 적합.">Hollow</option>
+                        <option value="custom">기타(직접입력)</option>
+                    </select>
+                    <input type="text" class="form-control mt-2" id="custom_shape" name="custom_shape" placeholder="악기 모양 직접 입력" style="display:none;">
+                    <script>
+                    function toggleCustomShape(select) {
+                        const customInput = document.getElementById('custom_shape');
+                        if (select.value === 'custom') {
+                            customInput.style.display = 'block';
+                            customInput.required = true;
+                        } else {
+                            customInput.style.display = 'none';
+                            customInput.required = false;
+                        }
+                    }
+                    </script>
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label">설명</label>
+                    <textarea class="form-control" id="description" name="description" rows="4"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="images" class="form-label">사진 업로드</label>
+                    <input class="form-control" type="file" id="images" name="images[]" multiple>
+                </div>
+
+                <button type="submit" class="btn btn-success">작성하기</button>
+                <a href="{{ url_for('main.index') }}" class="btn btn-secondary ms-2">← 돌아가기</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
