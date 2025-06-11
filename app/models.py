@@ -25,10 +25,10 @@ class InstrumentPost(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # FK로 연결
     user = db.relationship('User', backref='posts')  # 관계 설정
     brand = db.relationship('BrandInfo')
-    images = db.Column(JSON)  # ✅ 이미지 파일명
+    images = db.Column(JSON)  # 이미지 파일명
     views = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    status = db.Column(db.String(20), default='available')  # 거래 상태: available, reserved, sold
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)

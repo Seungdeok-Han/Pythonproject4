@@ -45,11 +45,23 @@
         <div class="row g-3 align-items-end">
             <div class="col-md-4">
                 <label for="brand" class="form-label">제조사</label>
-                <input type="text" class="form-control" id="brand" name="brand" required>
+                {% if brands and brands|length > 0 %}
+                <select class="form-select" id="brand" name="brand" required>
+                    <option value="" disabled selected>제조사 선택</option>
+                    {% for brand in brands %}
+                        <option value="{{ brand.name }}">{{ brand.name }}</option>
+                    {% endfor %}
+                </select>
+                {% else %}
+                <select class="form-select" id="brand" name="brand" required disabled>
+                    <option value="" selected>등록된 브랜드 없음</option>
+                </select>
+                {% endif %}
             </div>
             <div class="col-md-4">
                 <label for="model_name" class="form-label">모델명</label>
-                <input type="text" class="form-control" id="model_name" name="model_name" required>
+                <input type="text" class="form-control" id="model_name" name="model_name" list="model-list" required>
+                <datalist id="model-list"></datalist>
             </div>
             <div class="col-md-4">
                 <label for="images" class="form-label">사진 업로드</label>
@@ -105,4 +117,29 @@
         {% endfor %}
     </div>
 </div>
+<script>
+// 마이페이지 내 악기 등록: 브랜드 선택 시 모델명 자동완성
+const brandSelect = document.getElementById('brand');
+const modelInput = document.getElementById('model_name');
+const modelList = document.getElementById('model-list');
+if (brandSelect && modelInput && modelList) {
+  brandSelect.addEventListener('change', function() {
+    const brandName = brandSelect.value;
+    if (brandName) {
+      fetch(`/api/models_by_brand?brand=${encodeURIComponent(brandName)}`)
+        .then(res => res.json())
+        .then(data => {
+          modelList.innerHTML = '';
+          (data.models || []).forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m;
+            modelList.appendChild(opt);
+          });
+        });
+    } else {
+      modelList.innerHTML = '';
+    }
+  });
+}
+</script>
 {% endblock %}

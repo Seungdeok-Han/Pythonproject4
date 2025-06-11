@@ -2,6 +2,18 @@
 {% block title %}{{ post.title }}{% endblock %}
 
 {% block content %}
+<style>
+/* Only show underline on hover/focus for tooltip triggers */
+.brand-tooltip-trigger, .shape-tooltip-trigger, #famous-users-tooltip-trigger {
+  text-decoration: none;
+  transition: text-decoration 0.2s;
+}
+.brand-tooltip-trigger:hover, .brand-tooltip-trigger:focus,
+.shape-tooltip-trigger:hover, .shape-tooltip-trigger:focus,
+#famous-users-tooltip-trigger:hover, #famous-users-tooltip-trigger:focus {
+  text-decoration: underline dotted;
+}
+</style>
 <div class="container my-4">
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -25,13 +37,29 @@
             {% endif %}
 <ul class="list-group list-group-flush mb-3">
                 <li class="list-group-item"><strong>브랜드:</strong>
-                  <span style="color:blue; cursor:pointer;" class="brand-tooltip-trigger" data-brand-id="{{ post.brand_id|default(0) }}">
-                    {{ post.brand.name }}
-                  </span>
-                </li>
-                <li class="list-group-item"><strong>모델명:</strong> {{ post.model_name }}</li>
+  <span class="brand-tooltip-trigger" style="color:blue; cursor:pointer;"
+        data-brand-id="{{ post.brand.id }}"
+        onmouseover="window.showTooltip(event, 'brand', '{{ post.brand.id }}')"
+        onmouseout="window.hideTooltip()"
+        id="brand-tooltip">
+    {{ post.brand.name }}
+  </span>
+</li>
+                <li class="list-group-item"><strong>모델명:</strong> {{ post.model_name }}
+  {% if famous_users_for_model %}
+  <span class="ms-2 text-primary" id="famous-users-tooltip-trigger" style="cursor:pointer;" data-bs-toggle="tooltip" data-bs-placement="right" title="{{ famous_users_for_model }}">
+    이 기타를 사용한 사람은?
+  </span>
+  {% else %}
+  <span class="ms-2 text-muted" style="font-size:0.95em;">(유명 플레이어 정보 없음)</span>
+  {% endif %}
+</li>
                 <li class="list-group-item"><strong>쉐입:</strong>
-                  <span style="color:blue; cursor:pointer;" class="shape-tooltip-trigger" data-shape="{{ post.shape }}">
+                  <span class="shape-tooltip-trigger" style="color:blue; cursor:pointer;"
+                        data-shape="{{ post.shape|e }}"
+                        onmouseover="window.showShapeTooltip(event, '{{ post.shape|e }}')"
+                        onmouseout="window.hideTooltip()"
+                        id="shape-tooltip">
                     {{ post.shape }}
                   </span>
                 </li>
@@ -81,6 +109,16 @@
                 <span id="like-count">{{ post.likes|length }}명이 좋아합니다</span>
             {% endif %}
 
+            <div class="d-flex justify-content-end align-items-center mb-2">
+            {% if post.status == 'available' %}
+                <span class="badge bg-success fs-6 px-3 py-2" style="font-size:1.1rem;">거래 가능</span>
+            {% elif post.status == 'reserved' %}
+                <span class="badge bg-warning text-dark fs-6 px-3 py-2" style="font-size:1.1rem;">거래중</span>
+            {% elif post.status == 'sold' %}
+                <span class="badge bg-secondary fs-6 px-3 py-2" style="font-size:1.1rem;">거래 완료</span>
+            {% endif %}
+        </div>
+
             <hr>
             <h5>설명</h5>
             <p>{{ post.description.replace('\n', '<br>') | safe }}</p>
@@ -101,6 +139,39 @@
     {% endif %}
 
     <a href="{{ url_for('main.index') }}" class="btn btn-secondary mb-4">← 목록으로 돌아가기</a>
+
+    <div class="row">
+      <div class="col-md-8">
+        <!-- 기존 상세 내용 ... -->
+      </div>
+      <div class="col-md-4">
+        <!-- 유사 악기 추천 영역 -->
+        <div class="card mb-4 shadow-sm">
+          <div class="card-header bg-light fw-bold">이 악기와 비슷한 매물</div>
+          <div class="card-body">
+            {% if similar_posts and similar_posts|length > 0 %}
+              {% for sim in similar_posts %}
+                <div class="mb-3 border-bottom pb-2">
+                  <a href="{{ url_for('main.view_post', post_id=sim.id) }}" class="fw-bold" style="font-size:1.1em;">{{ sim.title }}</a><br>
+                  <span class="text-muted">{{ sim.brand.name if sim.brand else '' }} / {{ sim.model_name }}</span><br>
+                  <span class="badge bg-secondary me-1">{{ sim.shape }}</span>
+                  {% if sim.price %}<span class="badge bg-info text-dark">{{ '%.0f'|format(sim.price) }}만원</span>{% endif %}
+                  {% if sim.status == 'available' %}
+                    <span class="badge bg-success">거래 가능</span>
+                  {% elif sim.status == 'reserved' %}
+                    <span class="badge bg-warning text-dark">거래중</span>
+                  {% elif sim.status == 'sold' %}
+                    <span class="badge bg-secondary">거래 완료</span>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="text-muted">비슷한 매물이 없습니다.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 댓글 영역 -->
     <div class="card mb-4">
@@ -160,11 +231,14 @@
 {% endblock %}
 
 {% block scripts %}
+{{ super() }}
 <script src="{{ url_for('static', filename='view_post.js') }}"></script>
 <script>
-// 툴팁/답글 토글 window에 등록 (외부 JS에서 접근)
-window.showTooltip = showTooltip;
-window.hideTooltip = hideTooltip;
-window.toggleReplyForm = toggleReplyForm;
+document.addEventListener('DOMContentLoaded', function() {
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+    new bootstrap.Tooltip(tooltipTriggerEl);
+  });
+});
 </script>
 {% endblock %}

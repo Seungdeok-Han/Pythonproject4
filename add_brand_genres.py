@@ -54,16 +54,53 @@ def main():
             'Aria': '일본 브랜드, 포크/팝/록 등 다양한 장르, 입문자와 중급자 모두에 적합.',
             '기타': '기타 브랜드 또는 직접 입력. 다양한 스타일과 특징.',
         }
-        # BrandInfo에 브랜드가 없으면 추가 및 설명도 함께 저장
+        famous_users = {
+            'Fender': 'Eric Clapton, Jimi Hendrix, Jeff Beck, John Mayer',
+            'Gibson': 'Slash, Jimmy Page, B.B. King, Joe Bonamassa',
+            'Ibanez': 'Steve Vai, Joe Satriani, Paul Gilbert',
+            'PRS': 'Carlos Santana, Mark Tremonti, John Mayer',
+            'Yamaha': 'Mike Stern, Nathan East',
+            'Epiphone': 'Noel Gallagher, Gary Clark Jr.',
+            'Squier': 'Jack White',
+            'Cort': 'Jeff Berlin',
+            'ESP': 'Kirk Hammett, James Hetfield',
+            'Music Man': 'John Petrucci, Steve Lukather',
+            'Gretsch': 'George Harrison, Brian Setzer',
+            'Martin': 'Ed Sheeran, John Mayer',
+            'Taylor': 'Jason Mraz, Taylor Swift',
+            'Takamine': 'Bruce Springsteen',
+            'Godin': 'Steve Stevens',
+            'Schecter': 'Synyster Gates',
+            'Suhr': 'Mateus Asato',
+            'Danelectro': 'Jimmy Page',
+            'Jackson': 'Marty Friedman',
+            'Washburn': 'Nuno Bettencourt',
+            'Samick': '',
+            'Aria': '',
+            '기타': '',
+        }
+        # BrandInfo에 브랜드가 없으면 추가 및 설명/유명사용자도 함께 저장
         for brand_name in genres.keys():
             brand = BrandInfo.query.filter_by(name=brand_name).first()
             if not brand:
-                brand = BrandInfo(name=brand_name, description=descriptions.get(brand_name, ''))
+                brand = BrandInfo(
+                    name=brand_name,
+                    description=descriptions.get(brand_name, ''),
+                    famous_users=famous_users.get(brand_name, '')
+                )
                 db.session.add(brand)
                 print(f'브랜드 추가: {brand_name}')
-            elif not brand.description:
-                brand.description = descriptions.get(brand_name, '')
-                print(f'브랜드 설명 추가: {brand_name}')
+            else:
+                updated = False
+                if not brand.description:
+                    brand.description = descriptions.get(brand_name, '')
+                    updated = True
+                # famous_users가 None이거나 빈 문자열일 때도 업데이트
+                if not brand.famous_users or brand.famous_users.strip() == '':
+                    brand.famous_users = famous_users.get(brand_name, '')
+                    updated = True
+                if updated:
+                    print(f'브랜드 정보 보완: {brand_name}')
         db.session.commit()
         brands = BrandInfo.query.all()
         for brand in brands:

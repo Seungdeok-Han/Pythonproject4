@@ -19,6 +19,9 @@
             width: 300px;
         }
     </style>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <header>
@@ -33,7 +36,7 @@
                     <a class="nav-link" href="{{ url_for('main.add_post') }}">✍️ 글쓰기</a>
                   </li>
                   <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('user.mypage') }}">🙋 마이페이지</a>
+                    <a class="nav-link" href="{{ url_for('main.mypage') }}">🙋 마이페이지</a>
                   </li>
                   <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('auth.logout') }}">🔓 로그아웃</a>
@@ -53,6 +56,15 @@
       </header>
 
     <main class="container py-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="mt-2">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ 'info' if category=='info' else category }}" role="alert">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
         {% block content %}{% endblock %}
     </main>
 

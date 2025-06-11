@@ -16,14 +16,18 @@
                 <div class="mb-3">
                     <label for="brand_id" class="form-label">제조사</label>
                     <select class="form-select" id="brand_id" name="brand_id" required>
+                        <option value="" disabled>제조사 선택</option>
                         {% for brand in brands %}
-                            <option value="{{ brand.id }}" {% if post.brand_id == brand.id %}selected{% endif %}>{{ brand.name }}</option>
+                            <option value="{{ brand.name }}" {% if post.brand and post.brand.name == brand.name %}selected{% endif %}>{{ brand.name }}</option>
                         {% endfor %}
+                        <option value="custom">기타(직접입력)</option>
                     </select>
+                    <input type="text" class="form-control mt-2" id="custom_brand" name="custom_brand" placeholder="제조사 직접 입력" style="display:none;">
                 </div>
                 <div class="mb-3">
                     <label for="model_name" class="form-label">모델명</label>
-                    <input type="text" class="form-control" id="model_name" name="model_name" value="{{ post.model_name }}" required>
+                    <input type="text" class="form-control" id="model_name" name="model_name" list="model-list" value="{{ post.model_name }}" required>
+                    <datalist id="model-list"></datalist>
                 </div>
                 <div class="mb-3">
                     <label for="shape" class="form-label">악기 모양 (Shape)</label>
@@ -41,10 +45,56 @@
                     <label for="description" class="form-label">설명</label>
                     <textarea class="form-control" id="description" name="description" rows="4">{{ post.description }}</textarea>
                 </div>
+                <div class="mb-3">
+                    <label for="status" class="form-label">거래 상태</label>
+                    <select class="form-select" id="status" name="status" required>
+                        <option value="available" {% if post.status == 'available' %}selected{% endif %} style="color:#198754;font-weight:bold;">거래 가능</option>
+                        <option value="reserved" {% if post.status == 'reserved' %}selected{% endif %} style="color:#fd7e14;font-weight:bold;">거래중</option>
+                        <option value="sold" {% if post.status == 'sold' %}selected{% endif %} style="color:#6c757d;font-weight:bold;">거래 완료</option>
+                    </select>
+                </div>
                 <button type="submit" class="btn btn-success">수정 완료</button>
                 <a href="{{ url_for('main.view_post', post_id=post.id) }}" class="btn btn-secondary ms-2">취소</a>
             </form>
         </div>
     </div>
 </div>
+<script>
+// 브랜드 선택 시 모델명 자동완성 (수정폼)
+const brandSelect = document.getElementById('brand_id');
+const modelInput = document.getElementById('model_name');
+const modelList = document.getElementById('model-list');
+if (brandSelect && modelInput && modelList) {
+  brandSelect.addEventListener('change', function() {
+    const brandName = brandSelect.value;
+    if (brandName && brandName !== 'custom') {
+      fetch(`/api/models_by_brand?brand=${encodeURIComponent(brandName)}`)
+        .then(res => res.json())
+        .then(data => {
+          modelList.innerHTML = '';
+          (data.models || []).forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m;
+            modelList.appendChild(opt);
+          });
+        });
+    } else {
+      modelList.innerHTML = '';
+    }
+  });
+}
+</script>
+<script>
+                function toggleCustomBrand(select) {
+                  const customInput = document.getElementById('custom_brand');
+                  if (select.value === 'custom') {
+                    customInput.style.display = 'block';
+                    customInput.required = true;
+                  } else {
+                    customInput.style.display = 'none';
+                    customInput.required = false;
+                  }
+                }
+                document.getElementById('brand_id').addEventListener('change', function() { toggleCustomBrand(this); });
+                </script>
 {% endblock %}

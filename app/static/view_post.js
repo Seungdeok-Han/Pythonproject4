@@ -35,93 +35,95 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // 답글 작성
-  document.getElementById("comment-list").addEventListener("click", function (e) {
-    if (e.target && e.target.classList.contains("reply-submit")) {
-      const button = e.target;
-      const input = button.closest(".reply-form").querySelector(".reply-input");
-      const content = input.value.trim();
-      const parentId = input.getAttribute("data-parent-id");
-      if (!content) return;
-      fetch(form.dataset.url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest"
-        },
-        credentials: "include",
-        body: JSON.stringify({ content: content, parent_id: parentId })
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            const replyList = document.getElementById(`reply-list-${parentId}`);
-            const replyDiv = document.createElement("div");
-            replyDiv.className = "mt-3 ms-4 border-start ps-3";
-            replyDiv.id = `comment-${data.comment_id}`;
-            replyDiv.innerHTML = `
+  // 답글 작성, 댓글 삭제, 답글 엔터 등록 등은 comment-list가 있을 때만 바인딩
+  const commentList = document.getElementById("comment-list");
+  if (commentList) {
+    commentList.addEventListener("click", function (e) {
+      if (e.target && e.target.classList.contains("reply-submit")) {
+        const button = e.target;
+        const input = button.closest(".reply-form").querySelector(".reply-input");
+        const content = input.value.trim();
+        const parentId = input.getAttribute("data-parent-id");
+        if (!content) return;
+        fetch(form.dataset.url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+          },
+          credentials: "include",
+          body: JSON.stringify({ content: content, parent_id: parentId })
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              const replyList = document.getElementById(`reply-list-${parentId}`);
+              const replyDiv = document.createElement("div");
+              replyDiv.className = "mt-3 ms-4 border-start ps-3";
+              replyDiv.id = `comment-${data.comment_id}`;
+              replyDiv.innerHTML = `
   <strong>${data.username}</strong>
   <small class="text-muted">(${data.timestamp})</small>
   ${data.can_delete ? `<button class="btn btn-sm btn-outline-danger float-end delete-comment" data-comment-id="${data.comment_id}">삭제</button>` : ""}
   <br>${data.content}
 `;
-            replyList.appendChild(replyDiv);
-            input.value = "";
-            const form = document.getElementById(`reply-form-${parentId}`);
-            if (form) form.style.display = "none";
-          }
-        })
-        .catch(err => console.error("답글 오류:", err));
-    }
-  });
-
-  // 댓글 삭제
-  document.getElementById("comment-list").addEventListener("click", function (e) {
-    if (e.target && e.target.classList.contains("delete-comment")) {
-      const commentId = e.target.getAttribute("data-comment-id");
-      const confirmed = confirm("정말로 이 댓글을 삭제하시겠습니까?");
-      if (!confirmed) return;
-      fetch(`/comments/${commentId}/delete`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest"
-        },
-        credentials: "include"
-      })
-        .then(res => res.json())
-        .then((data) => {
-          if (data.success) {
-            const commentElem = document.getElementById(`comment-${commentId}`);
-            if (commentElem) {
-              commentElem.remove();
+              replyList.appendChild(replyDiv);
+              input.value = "";
+              const form = document.getElementById(`reply-form-${parentId}`);
+              if (form) form.style.display = "none";
             }
-          } else {
-            alert("삭제 권한이 없거나 실패했습니다.");
-          }
-        })
-        .catch(err => {
-          console.error("삭제 요청 중 오류:", err);
-          alert("서버 오류로 인해 삭제할 수 없습니다.");
-        });
-    }
-  });
-
-  document.getElementById("comment-list").addEventListener("keydown", function (event) {
-    if (
-      event.target.classList.contains("reply-input") &&
-      event.key === "Enter" &&
-      !event.shiftKey
-    ) {
-      event.preventDefault();
-      // 답글 작성 버튼 클릭 이벤트 트리거
-      const replyForm = event.target.closest(".reply-form");
-      if (replyForm) {
-        const submitBtn = replyForm.querySelector(".reply-submit");
-        if (submitBtn) submitBtn.click();
+          })
+          .catch(err => console.error("답글 오류:", err));
       }
-    }
-  });
+    });
+
+    commentList.addEventListener("click", function (e) {
+      if (e.target && e.target.classList.contains("delete-comment")) {
+        const commentId = e.target.getAttribute("data-comment-id");
+        const confirmed = confirm("정말로 이 댓글을 삭제하시겠습니까?");
+        if (!confirmed) return;
+        fetch(`/comments/${commentId}/delete`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+          },
+          credentials: "include"
+        })
+          .then(res => res.json())
+          .then((data) => {
+            if (data.success) {
+              const commentElem = document.getElementById(`comment-${commentId}`);
+              if (commentElem) {
+                commentElem.remove();
+              }
+            } else {
+              alert("삭제 권한이 없거나 실패했습니다.");
+            }
+          })
+          .catch(err => {
+            console.error("삭제 요청 중 오류:", err);
+            alert("서버 오류로 인해 삭제할 수 없습니다.");
+          });
+      }
+    });
+
+    commentList.addEventListener("keydown", function (event) {
+      if (
+        event.target.classList.contains("reply-input") &&
+        event.key === "Enter" &&
+        !event.shiftKey
+      ) {
+        event.preventDefault();
+        // 답글 작성 버튼 클릭 이벤트 트리거
+        const replyForm = event.target.closest(".reply-form");
+        if (replyForm) {
+          const submitBtn = replyForm.querySelector(".reply-submit");
+          if (submitBtn) submitBtn.click();
+        }
+      }
+    });
+  }
 
   // 좋아요 버튼
   const likeBtn = document.getElementById("like-button");
@@ -161,6 +163,57 @@ document.addEventListener("DOMContentLoaded", function () {
       window.hideTooltip();
     });
   });
+
+  // 시세 그래프 폼 이벤트
+  const priceForm = document.getElementById("price-history-form");
+  if (priceForm) {
+    priceForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const brandId = document.getElementById("brand-select").value;
+      const modelName = document.getElementById("model-select").value.trim();
+      if (!brandId || !modelName) return;
+      fetch(`/api/price_history?brand_id=${brandId}&model_name=${encodeURIComponent(modelName)}`)
+        .then(res => res.json())
+        .then(data => {
+          console.log('시세 그래프 응답:', data); // 콘솔 출력 추가
+          const chartDiv = document.getElementById("price-history-chart");
+          if (data.labels && data.labels.length > 0) {
+            chartDiv.style.display = "block";
+            drawPriceChart(data.labels, data.prices);
+          } else {
+            chartDiv.style.display = "block";
+            chartDiv.innerHTML = '<div class="text-muted">최근 거래 데이터가 없습니다.</div>';
+          }
+        });
+    });
+  }
+
+  // 시세 그래프 영역: 브랜드 선택 시 모델명 자동완성 (view_post.js로 이동)
+  const brandSelect = document.getElementById('brand-select');
+  const modelInput = document.getElementById('model-select');
+  const modelList = document.getElementById('model-list');
+  if (brandSelect && modelInput && modelList) {
+    brandSelect.addEventListener('change', function() {
+      const brandId = brandSelect.value;
+      const brandName = brandSelect.options[brandSelect.selectedIndex]?.text;
+      if (brandId && brandName) {
+        fetch(`/api/models_by_brand?brand=${encodeURIComponent(brandName)}`)
+          .then(res => res.json())
+          .then(data => {
+            modelList.innerHTML = '';
+            (data.models || []).forEach(model => {
+              if (model && typeof model === 'string' && model.trim().length > 1) {
+                const option = document.createElement('option');
+                option.value = model;
+                modelList.appendChild(option);
+              }
+            });
+          });
+      } else {
+        modelList.innerHTML = '';
+      }
+    });
+  }
 });
 
 function appendComment(data) {
@@ -224,7 +277,6 @@ function toggleReplyForm(commentId) {
   }
 }
 
-let tooltip;
 function showTooltip(event, category, id) {
     id = parseInt(id, 10);
     fetch(`/api/info/${category}/${id}`)
@@ -256,6 +308,9 @@ window.hideTooltip = hideTooltip;
 window.toggleReplyForm = toggleReplyForm;
 
 function showShapeTooltip(event, shape) {
+  if (!shape || shape === 'null' || shape === 'None') {
+    shape = '정보 없음';
+  }
   const shapeTips = {
     'Stratocaster': {
       desc: 'Fender의 대표적인 일렉기타 쉐입. 인체공학적 바디와 밝은 사운드가 특징.',
@@ -298,7 +353,7 @@ function showShapeTooltip(event, shape) {
       label: '&lt;Gretsch Hollowbody&gt;'
     }
   };
-  const tip = shapeTips[shape] || {desc: '사용자 정의 쉐입 또는 정보 없음', img: null, label: ''};
+  const tip = shapeTips[shape] || {desc: '사용자 정의 쉐이프 또는 정보 없음', img: null, label: ''};
   tooltip = document.getElementById('infoTooltip');
   let html = `<strong>${shape}</strong><br>${tip.desc}`;
   if (tip.img) {
@@ -315,3 +370,37 @@ function showShapeTooltip(event, shape) {
   tooltip.style.top = event.pageY + 10 + 'px';
 }
 window.showShapeTooltip = showShapeTooltip;
+
+function drawPriceChart(labels, prices) {
+  const chartDiv = document.getElementById("price-history-chart");
+  chartDiv.innerHTML = '<canvas id="priceChart" height="220"></canvas>';
+  if (window.priceChartObj) window.priceChartObj.destroy();
+  const ctx = document.getElementById('priceChart').getContext('2d');
+  window.priceChartObj = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: '거래가(만원)',
+        data: prices,
+        borderColor: '#0d6efd',
+        backgroundColor: 'rgba(13,110,253,0.1)',
+        tension: 0.2,
+        pointRadius: 4,
+        pointBackgroundColor: '#0d6efd',
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true }
+      },
+      scales: {
+        x: { title: { display: true, text: '거래일' } },
+        y: { title: { display: true, text: '만원' }, beginAtZero: true }
+      }
+    }
+  });
+}
